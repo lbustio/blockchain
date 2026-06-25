@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlockLearn | Demo Educativa de Blockchain</title>
+    <meta name="description" content="Herramienta interactiva para enseñar conceptos de Blockchain, integridad de datos y consenso de red. Caso de uso: Registro de Títulos Académicos.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <i data-lucide="shield-check" class="logo-icon"></i>
+                <div>
+                    <h1>BlockLearn</h1>
+                    <span class="subtitle">Blockchain Demo</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="hash-tab">
+                    <i data-lucide="hash"></i>
+                    <span>1. Función Hash</span>
+                </button>
+                <button class="nav-btn" data-tab="block-tab">
+                    <i data-lucide="box"></i>
+                    <span>2. El Bloque</span>
+                </button>
+                <button class="nav-btn" data-tab="chain-tab">
+                    <i data-lucide="link"></i>
+                    <span>3. La Cadena (Blockchain)</span>
+                </button>
+                <button class="nav-btn" data-tab="network-tab">
+                    <i data-lucide="network"></i>
+                    <span>4. Ataques & Consenso</span>
+                </button>
+                <button class="nav-btn" data-tab="ledger-tab">
+                    <i data-lucide="award"></i>
+                    <span>5. Registro de Títulos</span>
+                </button>
+            </nav>
+
+            <div class="settings-panel">
+                <h3>Ajustes del Sistema</h3>
+                <div class="setting-group">
+                    <label for="difficulty-select">Dificultad de Minado:</label>
+                    <select id="difficulty-select">
+                        <option value="1">1 (Fácil: "0...")</option>
+                        <option value="2" selected>2 (Medio: "00...")</option>
+                        <option value="3">3 (Difícil: "000...")</option>
+                        <option value="4">4 (Muy Difícil: "0000...")</option>
+                    </select>
+                </div>
+                <button id="reset-btn" class="btn btn-danger">
+                    <i data-lucide="refresh-cw"></i> Reiniciar Simulación
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- HEADER -->
+            <header class="main-header">
+                <div class="header-info">
+                    <h2 id="tab-title">Función Hash (SHA-256)</h2>
+                    <p id="tab-description">El cimiento criptográfico de la inmutabilidad de datos.</p>
+                </div>
+                <div class="network-indicator">
+                    <span class="status-dot green"></span>
+                    <span>Red de Verificación Online</span>
+                </div>
+            </header>
+
+            <!-- WORKSPACE LAYOUT -->
+            <div class="workspace">
+                <!-- Left: Interactive Playground -->
+                <div class="playground">
+                    
+                    <!-- TAB 1: HASH SANDBOX -->
+                    <section id="hash-tab" class="tab-content active">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Generador de Hash SHA-256</h3>
+                                <span class="badge info">SHA-256</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="hash-input">Ingresa cualquier dato (texto, nombres, datos de prueba):</label>
+                                    <textarea id="hash-input" placeholder="Escribe algo aquí para ver cómo cambia el hash de forma instantánea al teclear..."></textarea>
+                                </div>
+                                
+                                <div class="hash-output-container">
+                                    <div class="hash-output-label">
+                                        <span>HASH SHA-256 RESULTANTE:</span>
+                                        <span class="hash-length">64 caracteres hexadecimales (256 bits)</span>
+                                    </div>
+                                    <div class="hash-display" id="hash-output">
+                                        e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- TAB 2: BLOCK SANDBOX -->
+                    <section id="block-tab" class="tab-content">
+                        <div class="block-container-single">
+                            <div class="block-card valid" id="single-block">
+                                <div class="block-header">
+                                    <span class="block-num">BLOQUE #1</span>
+                                    <span class="block-status-text" id="single-block-status">VÁLIDO</span>
+                                </div>
+                                <div class="block-body">
+                                    <div class="input-row">
+                                        <label>Índice:</label>
+                                        <input type="number" id="single-block-index" value="1" disabled>
+                                    </div>
+                                    <div class="input-row">
+                                        <label>Timestamp:</label>
+                                        <input type="text" id="single-block-timestamp" value="1719266400" disabled>
+                                    </div>
+                                    <div class="input-row">
+                                        <label>Datos (Diploma):</label>
+                                        <textarea id="single-block-data" placeholder="Escribe datos en el bloque...">Estudiante: Juan Pérez | Título: Ing. de Software | Univ: Univ. de Madrid | ID: TIT-100</textarea>
+                                    </div>
+                                    <div class="input-row highlight">
+                                        <label>Nonce:</label>
+                                        <div class="nonce-wrapper">
+                                            <input type="number" id="single-block-nonce" value="0">
+                                            <button id="single-block-mine-btn" class="btn btn-primary">
+                                                <i data-lucide="hammer" class="icon-spin-target"></i> Minar Bloque
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="step-mode-toggle" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                                        <input type="checkbox" id="step-mode-checkbox" style="width: auto; margin: 0; cursor: pointer;">
+                                        <label for="step-mode-checkbox" style="font-size: 0.8rem; color: var(--color-muted); cursor: pointer;">Modo paso a paso (probar 1 nonce por clic)</label>
+                                    </div>
+                                    
+                                    <div class="divider"></div>
+
+                                    <div class="input-row">
+                                        <label style="font-size: 0.75rem; color: var(--color-muted);">Entrada SHA-256 ({index}{timestamp}{datos}{prevHash}{nonce}):</label>
+                                        <textarea class="block-string-display" id="single-block-string" readonly style="font-family: var(--font-mono); font-size: 0.7rem; padding: 6px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 4px; width: 100%; min-height: 64px; resize: none; color: var(--color-text);"></textarea>
+                                    </div>
+                                    
+                                    <div class="hash-field">
+                                        <label>Anterior Hash:</label>
+                                        <div class="hash-val code">0000000000000000000000000000000000000000000000000000000000000000</div>
+                                    </div>
+                                    <div class="hash-field font-bold">
+                                        <label>Hash:</label>
+                                        <div class="hash-val code text-glow" id="single-block-hash">Calculando...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- TAB 3: BLOCKCHAIN VISUALIZER (ENHANCED) -->
+                    <section id="chain-tab" class="tab-content">
+                        <!-- Chain Health Dashboard -->
+                        <div class="chain-health-dashboard" id="chain-health">
+                            <div class="health-indicator">
+                                <i data-lucide="activity"></i>
+                                <span id="chain-health-text">Cadena Íntegra</span>
+                            </div>
+                            <div class="health-stats">
+                                <div class="health-stat">
+                                    <span class="health-stat-value" id="chain-block-count">0</span>
+                                    <span class="health-stat-label">Bloques</span>
+                                </div>
+                                <div class="health-stat">
+                                    <span class="health-stat-value" id="chain-title-count">0</span>
+                                    <span class="health-stat-label">Títulos</span>
+                                </div>
+                                <div class="health-stat">
+                                    <span class="health-stat-value" id="chain-difficulty-display">2</span>
+                                    <span class="health-stat-label">Dificultad</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Blockchain Visual Chain -->
+                        <div class="chain-actions-bar" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div class="chain-node-selector-wrapper" style="display: flex; align-items: center; gap: 10px;">
+                                <label for="chain-node-select" style="font-size: 0.9rem; color: var(--color-muted); margin: 0;">Ver cadena de (cada institución tiene su copia):</label>
+                                                <select id="chain-node-select" style="padding: 8px 12px; font-size: 0.9rem; color: var(--color-text); border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
+                                                    <option value="Peer_A">Nodo A — Univ. Complutense (Líder)</option>
+                                                    <option value="Peer_B">Nodo B — Univ. Barcelona</option>
+                                                    <option value="Peer_C">Nodo C — Univ. Valencia</option>
+                                                </select>
+                            </div>
+                            <button id="add-manual-block-btn" class="btn btn-primary" style="margin: 0;">
+                                <i data-lucide="plus-circle"></i> Añadir Bloque Manual
+                            </button>
+                        </div>
+
+                        <div class="blockchain-scroll-container">
+                            <div class="blockchain-wrapper" id="blockchain-list">
+                                <!-- Generado dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Tip Bar -->
+                        <div class="chain-tip-bar">
+                            <i data-lucide="mouse-pointer-click"></i>
+                            <span><strong>Clic</strong> en cualquier bloque para ver sus detalles completos. <strong>Edita</strong> los datos de cualquier bloque para ver cómo la cadena se rompe en tiempo real.</span>
+                        </div>
+
+                        <!-- Node Management for Chain Tab -->
+                        <div class="card" style="margin-top: 25px;">
+                            <div class="card-header">
+                                <h3 style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="server"></i> Gesti&oacute;n de Nodos
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                                    <div class="form-group" style="margin: 0; flex: 1; min-width: 180px;">
+                                        <label for="chain-new-node-name" style="font-size: 0.8rem; color: var(--color-muted); display: block; margin-bottom: 4px;">Nuevo nodo</label>
+                                        <input type="text" id="chain-new-node-name" placeholder="Ej. Nodo D">
+                                    </div>
+                                    <button id="chain-add-node-btn" class="btn btn-primary" style="margin: 0;">
+                                        <i data-lucide="plus"></i> Agregar Nodo
+                                    </button>
+                                </div>
+                                <div id="chain-node-list" style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <!-- Generado dinámicamente -->
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--color-muted); margin-top: 10px;">
+                                    Los nodos se a&ntilde;aden autom&aacute;ticamente con una cadena sincronizada. Eliminar un nodo no afecta a los dem&aacute;s.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- TAB 4: ATTACKS & CONSENSUS -->
+                    <section id="network-tab" class="tab-content">
+                        <!-- Network Topology Diagram -->
+                        <div class="network-topology-container">
+                            <div class="topology-header">
+                                <i data-lucide="git-branch"></i>
+                                <h3>Topología de Red — Consorcio Universitario (3 Nodos)</h3>
+                            </div>
+                            <div class="topology-diagram">
+                                <!-- Generado dinámicamente por updateTopologyDiagram() -->
+                            </div>
+                        </div>
+
+                        <!-- Node chain sections (each node with its blocks) -->
+                        <div id="attack-chain-sections" style="margin-bottom: 24px;">
+                        </div>
+
+                        <!-- Laboratorio de Ataques -->
+                        <div class="card" style="margin-bottom: 30px; border-color: var(--accent-invalid-border);">
+                            <div class="card-header" style="background-color: var(--accent-invalid-bg);">
+                                <h3 style="color: var(--accent-invalid); display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="shield-alert"></i> Laboratorio de Hackeo (Casos Extremos)
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <p style="font-size: 0.9rem; margin-bottom: 20px; color: var(--color-muted);">
+                                    Aquí puedes disparar ataques controlados para intentar violar el registro de blockchain en los nodos y evaluar cómo reacciona el consenso.
+                                </p>
+                                
+                                <div class="attacks-grid">
+                                    <!-- Ataque 1 -->
+                                    <div class="attack-card">
+                                        <div class="attack-card-header">
+                                            <span class="attack-number">01</span>
+                                            <h4>Alteración de Datos</h4>
+                                        </div>
+                                        <p>Modifica el Bloque #5 en el Nodo B para falsificar un diploma. La cadena del Nodo B se romperá inmediatamente (color Rojo).</p>
+                                        <button id="attack-tamper-btn" class="btn btn-danger">
+                                            <i data-lucide="edit-3"></i> Alterar Nodo B
+                                        </button>
+                                    </div>
+                                    <!-- Ataque 2 -->
+                                    <div class="attack-card">
+                                        <div class="attack-card-header">
+                                            <span class="attack-number">02</span>
+                                            <h4>Reminado Local</h4>
+                                        </div>
+                                        <p>Modifica el Nodo B y re-mina sus bloques locales. La cadena se volverá verde en Nodo B, pero sus hashes diferirán del resto.</p>
+                                        <button id="attack-remine-btn" class="btn btn-danger">
+                                            <i data-lucide="cpu"></i> Re-minar Nodo B
+                                        </button>
+                                    </div>
+                                    <!-- Ataque 3 -->
+                                    <div class="attack-card highlight">
+                                        <div class="attack-card-header">
+                                            <span class="attack-number" style="background: var(--accent-invalid);">03</span>
+                                            <h4>Ataque del 51%</h4>
+                                        </div>
+                                        <p>El atacante toma control de 3 de 5 nodos (mayoría absoluta) con datos falsos y re-mina todas sus cadenas para que sean <em>válidas localmente</em>. Al ejecutar Consenso, los nodos honestos son sobrescritos.</p>
+                                        <button id="attack-51-btn" class="btn btn-danger btn-full">
+                                            <i data-lucide="skull"></i> Ejecutar Ataque del 51%
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="network-actions">
+                            <button id="consensus-btn" class="btn btn-success btn-large">
+                                <i data-lucide="users"></i> Ejecutar Consenso de Red
+                            </button>
+                            <span class="action-desc">Sincroniza los nodos de la red utilizando la regla de la mayoría absoluta y cadena más larga.</span>
+                        </div>
+
+                        <!-- Gestión de Nodos Dinámicos -->
+                        <div class="card" style="margin-bottom: 30px;">
+                            <div class="card-header">
+                                <h3 style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="plus-circle"></i> Gestión de Nodos Dinámicos
+                                </h3>
+                            </div>
+                            <div class="card-body" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                                <div class="form-group" style="margin: 0; flex: 1; min-width: 200px;">
+                                    <input type="text" id="new-node-name" placeholder="Nombre del nuevo nodo (ej. Nodo D)" style="padding: 10px;">
+                                </div>
+                                <div class="form-group" style="margin: 0; min-width: 150px;">
+                                    <label for="new-node-parent" style="font-size: 0.8rem; color: var(--color-muted); display: block; margin-bottom: 4px;">Conectar a:</label>
+                                    <select id="new-node-parent" style="padding: 10px; font-size: 0.9rem; width: 100%;">
+                                    </select>
+                                </div>
+                                <button id="add-node-btn" class="btn btn-primary" style="margin: 0;">
+                                    <i data-lucide="plus"></i> Agregar Nuevo Nodo
+                                </button>
+                                <p style="font-size: 0.85rem; color: var(--color-muted); margin: 0; width: 100%;">
+                                    Los nuevos nodos se sincronizan automáticamente con la cadena mayoritaria en consenso al conectarse.
+                                </p>
+                            </div>
+                        </div>
+                        
+                    </section>
+
+                    <!-- TAB 5: TITLE REGISTRY & VERIFICATION -->
+                    <section id="ledger-tab" class="tab-content">
+                        <div class="ledger-layout">
+                            <!-- Column 1: Add Title and Waiting Signature list -->
+                            <div class="ledger-left">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3>Emitir Nuevo Título Universitario</h3>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="title-form">
+                                            <div class="form-group">
+                                                <label for="title-student">Nombre del Estudiante:</label>
+                                                <input type="text" id="title-student" placeholder="Ej. Juan Manuel Silva" required>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label for="title-degree">Carrera / Título:</label>
+                                                    <input type="text" id="title-degree" placeholder="Ej. Lic. en Matemáticas" required>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="title-university">Universidad Emisora:</label>
+                                                    <select id="title-university">
+                                                        <option value="Univ. de Madrid">Univ. de Madrid</option>
+                                                        <option value="Univ. de Barcelona">Univ. de Barcelona</option>
+                                                        <option value="Univ. de Valencia">Univ. de Valencia</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label for="title-date">Fecha de Emisión:</label>
+                                                    <input type="text" id="title-date" placeholder="AAAA-MM-DD" value="2026-06-24">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="title-id">ID Único de Título:</label>
+                                                    <input type="text" id="title-id" placeholder="TIT-XXXXX" readonly>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-full">
+                                                <i data-lucide="check-square"></i> Firmar y Enviar a Bandeja de Espera
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <div class="card margin-top">
+                                    <div class="card-header">
+                                        <h3>Bandeja de Espera de Firma (Mempool)</h3>
+                                        <span class="badge warning" id="mempool-count">0 en espera</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-container">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>ID Título</th>
+                                                        <th>Estudiante</th>
+                                                        <th>Carrera</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="mempool-list">
+                                                    <!-- Títulos pendientes de minar -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div style="margin-top: 15px;">
+                                            <label for="mine-node-select" style="font-size: 0.8rem; color: var(--color-muted); display: block; margin-bottom: 6px;">Minar bloque en Nodo:</label>
+                                            <div class="nonce-wrapper">
+                                                <select id="mine-node-select" style="padding: 8px 12px; font-size: 0.9rem;">
+                                                    <option value="Peer_A">Nodo A — Univ. Complutense (Líder)</option>
+                                                    <option value="Peer_B">Nodo B — Univ. Barcelona</option>
+                                                    <option value="Peer_C">Nodo C — Univ. Valencia</option>
+                                                    <option value="Peer_D">Nodo D — Min. Educación</option>
+                                                    <option value="Peer_E">Nodo E — ANECA</option>
+                                                </select>
+                                                <button id="mine-transactions-btn" class="btn btn-success" style="padding: 8px 16px;">
+                                                    <i data-lucide="hammer"></i> Minar Bloque
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Column 2: Verification Sandbox -->
+                            <div class="ledger-right">
+                                <div class="card" style="border-color: var(--accent-primary);">
+                                    <div class="card-header" style="background-color: rgba(99, 102, 241, 0.05);">
+                                        <h3 style="color: var(--accent-info); display: flex; align-items: center; gap: 8px;">
+                                            <i data-lucide="search"></i> Verificador de Títulos de Empleadores
+                                        </h3>
+                                        <span class="badge info">Sello Blockchain</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text" style="font-size: 0.85rem; margin-bottom: 15px; color: var(--color-muted);">
+                                            Simula ser un reclutador de empleo buscando e intentando verificar un diploma académico en la blockchain.
+                                        </p>
+                                        
+                                        <div class="form-group">
+                                            <label for="search-input">Buscar por Nombre del Graduado o ID de Título:</label>
+                                            <div style="position: relative;">
+                                                <input type="text" id="search-input" placeholder="Ej. Alice Gómez o TIT-87263">
+                                                <i data-lucide="search" style="position: absolute; right: 12px; top: 12px; color: var(--color-muted); width: 18px; height: 18px;"></i>
+                                            </div>
+                                        </div>
+
+                                        <!-- Panel de estado de verificación visual -->
+                                        <div id="verification-status-panel" class="verification-box info-box">
+                                            <i data-lucide="help-circle" class="status-box-icon"></i>
+                                            <div class="status-box-content">
+                                                <h4>Esperando Búsqueda</h4>
+                                                <p>Ingresa el nombre de un graduado para validar la autenticidad criptográfica de su título.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Blockchain visualization for Tab 5 -->
+                        <div class="ledger-chain-section" style="margin-top: 30px; grid-column: 1 / -1;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 style="display: flex; align-items: center; gap: 8px;">
+                                        <i data-lucide="link"></i> Cadena de Bloques — Registro de Títulos
+                                    </h3>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <label for="ledger-node-select" style="font-size: 0.8rem; color: var(--color-muted);">Ver nodo:</label>
+                                        <select id="ledger-node-select" style="padding: 6px 10px; font-size: 0.85rem; color: var(--color-text); border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="blockchain-scroll-container">
+                                        <div class="blockchain-wrapper" id="ledger-blockchain-list">
+                                            <!-- Generado dinámicamente -->
+                                        </div>
+                                    </div>
+                                    <!-- Save / Load persistence -->
+                                    <div class="divider" style="margin: 20px 0;"></div>
+                                    <div class="ledger-persistence" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                                        <div class="form-group" style="margin: 0; flex: 1; min-width: 160px;">
+                                            <label for="ledger-filename" style="font-size: 0.8rem; color: var(--color-muted);">Nombre del archivo:</label>
+                                            <input type="text" id="ledger-filename" value="ledger_backup" style="padding: 8px; font-size: 0.85rem; font-family: var(--font-mono);">
+                                        </div>
+                                        <div class="form-group" style="margin: 0; flex: 1; min-width: 160px;">
+                                            <label for="ledger-password" style="font-size: 0.8rem; color: var(--color-muted);">Contrase&ntilde;a (cifrado):</label>
+                                            <input type="password" id="ledger-password" placeholder="••••••••" style="padding: 8px; font-size: 0.85rem;">
+                                        </div>
+                                        <button id="ledger-save-btn" class="btn btn-primary" style="margin: 0;">
+                                            <i data-lucide="save"></i> Guardar
+                                        </button>
+                                        <button id="ledger-load-btn" class="btn btn-success" style="margin: 0;">
+                                            <i data-lucide="upload"></i> Cargar
+                                        </button>
+                                        <div class="form-group" style="margin: 0; min-width: 200px;">
+                                            <label for="ledger-saves-list" style="font-size: 0.8rem; color: var(--color-muted);">Guardados disponibles:</label>
+                                            <select id="ledger-saves-list" style="padding: 8px; font-size: 0.85rem;">
+                                                <option value="">— Sin guardados —</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right: Explanatory Educational Sidebar -->
+                <aside class="edu-sidebar">
+                    <div class="edu-card">
+                        <div class="edu-header">
+                            <i data-lucide="graduation-cap" class="edu-icon"></i>
+                            <h3>¿Qué estamos aprendiendo?</h3>
+                        </div>
+                        <div class="edu-body" id="edu-text">
+                            <!-- Dinámicamente actualizado según la pestaña seleccionada -->
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <!-- BLOCK DETAIL MODAL (OVERLAY) -->
+    <div class="block-modal-overlay" id="block-modal-overlay">
+        <div class="block-modal" id="block-modal">
+            <div class="block-modal-header">
+                <div class="block-modal-title">
+                    <i data-lucide="box"></i>
+                    <h3 id="modal-block-title">Bloque #0</h3>
+                    <span class="badge" id="modal-block-badge">VÁLIDO</span>
+                </div>
+                <button class="btn-icon" id="modal-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="block-modal-body">
+                <!-- Section 1: Metadata -->
+                <div class="modal-section">
+                    <h4><i data-lucide="info"></i> Metadatos del Bloque</h4>
+                    <div class="modal-field-grid">
+                        <div class="modal-field">
+                            <label>Índice</label>
+                            <span id="modal-index" class="code">0</span>
+                        </div>
+                        <div class="modal-field">
+                            <label>Timestamp</label>
+                            <span id="modal-timestamp" class="code">—</span>
+                        </div>
+                        <div class="modal-field">
+                            <label>Nonce</label>
+                            <span id="modal-nonce" class="code">—</span>
+                        </div>
+                        <div class="modal-field">
+                            <label>Tamaño</label>
+                            <span id="modal-size" class="code">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Data Content -->
+                <div class="modal-section">
+                    <h4><i data-lucide="file-text"></i> Contenido (Datos del Bloque)</h4>
+                    <div class="modal-data-display" id="modal-data-content">
+                        <!-- Render dinámico del contenido del bloque -->
+                    </div>
+                </div>
+
+                <!-- Section 3: Block string input -->
+                <div class="modal-section">
+                    <h4><i data-lucide="code"></i> Entrada SHA-256</h4>
+                    <textarea id="modal-block-string" readonly style="font-family: var(--font-mono); font-size: 0.7rem; padding: 6px; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 4px; width: 100%; min-height: 64px; resize: none; color: var(--color-text);"></textarea>
+                </div>
+
+                <!-- Section 4: Hash Chain -->
+                <div class="modal-section">
+                    <h4><i data-lucide="link"></i> Cadena Criptográfica</h4>
+                    <div class="modal-hash-chain">
+                        <div class="modal-hash-row">
+                            <label>Hash Anterior (padre):</label>
+                            <div class="modal-hash-val" id="modal-prev-hash">—</div>
+                        </div>
+                        <div class="modal-hash-arrow">
+                            <i data-lucide="arrow-down"></i>
+                            <span>Se combina con los datos, nonce y timestamp</span>
+                        </div>
+                        <div class="modal-hash-row current">
+                            <label>Hash de ESTE Bloque:</label>
+                            <div class="modal-hash-val" id="modal-current-hash">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Validation -->
+                <div class="modal-section">
+                    <h4><i data-lucide="check-circle"></i> Validación</h4>
+                    <div class="modal-validation-grid" id="modal-validation-grid">
+                        <!-- Checks dinámicos -->
+                    </div>
+                </div>
+
+                <!-- Interactive Actions -->
+                <div class="modal-actions">
+                    <button class="btn btn-danger" id="modal-tamper-btn">
+                        <i data-lucide="edit-3"></i> Alterar Datos
+                    </button>
+                    <button class="btn btn-primary" id="modal-mine-btn">
+                        <i data-lucide="hammer"></i> Minar Bloque
+                    </button>
+                    <label style="font-size: 0.75rem; color: var(--color-muted); display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="checkbox" id="modal-step-cb" style="width: auto; margin: 0; cursor: pointer;"> Paso a paso
+                    </label>
+                    <button class="btn btn-danger" id="modal-delete-btn" style="background-color: var(--accent-invalid);">
+                        <i data-lucide="trash-2"></i> Eliminar Bloque
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAMPER MODAL (inline edit) -->
+    <div class="block-modal-overlay" id="tamper-modal-overlay">
+        <div class="block-modal tamper-modal">
+            <div class="block-modal-header">
+                <div class="block-modal-title">
+                    <i data-lucide="alert-triangle" style="color: var(--accent-invalid);"></i>
+                    <h3 id="tamper-modal-title">Alterar Bloque</h3>
+                </div>
+                <button class="btn-icon" id="tamper-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="block-modal-body">
+                <p style="color: var(--color-muted); margin-bottom: 16px;">Escribe los nuevos datos falsos para inyectar en este bloque. La cadena se romperá inmediatamente.</p>
+                <div class="form-group">
+                    <label for="tamper-data-input">Datos Falsificados:</label>
+                    <textarea id="tamper-data-input" placeholder="Escribe los datos falsos aquí..." style="min-height: 100px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Nodo objetivo:</label>
+                    <select id="tamper-node-select">
+                        <option value="Peer_A">Nodo A — Líder</option>
+                        <option value="Peer_B">Nodo B — Barcelona</option>
+                        <option value="Peer_C">Nodo C — Valencia</option>
+                        <option value="Peer_D">Nodo D — Ministerio</option>
+                        <option value="Peer_E">Nodo E — ANECA</option>
+                    </select>
+                </div>
+                <button class="btn btn-danger btn-full" id="tamper-confirm-btn">
+                    <i data-lucide="zap"></i> Inyectar Datos Falsificados
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANUAL BLOCK CREATION MODAL -->
+    <div class="block-modal-overlay" id="manual-block-modal-overlay">
+        <div class="block-modal">
+            <div class="block-modal-header">
+                <div class="block-modal-title">
+                    <i data-lucide="plus-circle" style="color: var(--accent-primary);"></i>
+                    <h3>Crear Bloque Manualmente</h3>
+                </div>
+                <button class="btn-icon" id="manual-block-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="block-modal-body">
+                <p style="color: var(--color-muted); margin-bottom: 16px;">Crea un bloque de forma arbitraria en la cadena de un nodo. Útil para ver cómo afecta un bloque no minado a la inmutabilidad de la cadena.</p>
+                <div class="form-group">
+                    <label for="manual-block-data">Datos del Bloque (Texto o JSON):</label>
+                    <textarea id="manual-block-data" placeholder="Ej. Estudiante: Pedro Perez | Titulo: Ingeniero" style="min-height: 100px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="manual-block-node-select">Nodo objetivo:</label>
+                    <select id="manual-block-node-select">
+                        <option value="Peer_A">Nodo A — Univ. Complutense (Líder)</option>
+                        <option value="Peer_B">Nodo B — Univ. Barcelona</option>
+                        <option value="Peer_C">Nodo C — Univ. Valencia</option>
+                        <option value="Peer_D">Nodo D — Ministerio de Educación</option>
+                        <option value="Peer_E">Nodo E — ANECA</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="manual-block-mine-checkbox" checked style="width: auto; margin: 0; cursor: pointer;">
+                    <label for="manual-block-mine-checkbox" style="margin: 0; cursor: pointer;">Minar inmediatamente (Proof of Work válido)</label>
+                </div>
+                <button class="btn btn-primary btn-full" id="manual-block-confirm-btn">
+                    <i data-lucide="check"></i> Crear Bloque
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification System -->
+    <div id="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
