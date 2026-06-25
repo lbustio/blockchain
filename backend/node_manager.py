@@ -55,7 +55,7 @@ class NodeManager:
             
         new_chain = Blockchain(self.difficulty)
         
-        # Clone the chain of the node with the highest consensus (majority / valid / longest)
+        # Prefer longest valid chain; fall back to longest chain regardless of validity
         best_chain = None
         best_len = -1
         for nid, bc in self.nodes.items():
@@ -63,7 +63,13 @@ class NodeManager:
                 if len(bc.chain) > best_len:
                     best_len = len(bc.chain)
                     best_chain = bc.chain
-                    
+
+        if best_chain is None:
+            for nid, bc in self.nodes.items():
+                if self.node_connections.get(nid, True) and len(bc.chain) > best_len:
+                    best_len = len(bc.chain)
+                    best_chain = bc.chain
+
         if best_chain:
             new_chain.chain = copy.deepcopy(best_chain)
             
@@ -79,8 +85,10 @@ class NodeManager:
     def remove_node(self, node_id: str) -> bool:
         if node_id not in self.nodes:
             return False
-        # Prevent removing the last remaining node
+        # Prevent removing the last remaining node or the root
         if len(self.nodes) <= 1:
+            return False
+        if node_id == "Peer_A":
             return False
         # Reparent children to Peer_A before removing
         for child_id in list(self.node_parents.keys()):
@@ -102,17 +110,20 @@ class NodeManager:
     def mine_block_on_node(self, node_id: str, data: str | list = None) -> dict:
         if node_id not in self.nodes:
             return None
-        
+
         blockchain = self.nodes[node_id]
-        
+
         # If no custom data, grab titles from the mempool
         if data is None:
             if not blockchain.mempool:
                 data = f"Bloque minado por {node_id} (Sin Títulos)"
             else:
                 data = list(blockchain.mempool)
-                blockchain.mempool = []
-                
+                # Clear these title_ids from ALL nodes' mempools to prevent double-mining
+                mined_ids = {item.get('title_id') for item in data if isinstance(item, dict) and item.get('title_id')}
+                for bc in self.nodes.values():
+                    bc.mempool = [t for t in bc.mempool if t.get('title_id') not in mined_ids]
+
         new_block = blockchain.add_block(data)
         return new_block.to_dict()
 
@@ -174,8 +185,7 @@ class NodeManager:
         majority_needed = (total_nodes // 2) + 1
 
         # Los nodos atacantes son todos excepto el líder (Peer_A)
-        # Tomamos los que sean suficientes para superar la mayoría
-        attack_targets = [nid for nid in all_node_ids if nid != "Peer_A"][:majority_needed]
+        attack_targets = [nid for nid in all_node_ids if nid != "Peer_A"]
 
         attacked_nodes = []
         for node_id in attack_targets:

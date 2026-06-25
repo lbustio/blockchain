@@ -124,7 +124,7 @@ function formatBlockData(data) {
 }
 
 function displayNodeName(nodeId) {
-    return nodeId.replace('Peer_', 'Nodo ').replace('_', ' ');
+    return nodeId.replace('Peer_', 'Nodo ').replace(/_/g, ' ');
 }
 
 function serializeBlockData(data) {
@@ -494,6 +494,7 @@ async function initBlockSandbox() {
             blockData.disabled = true;
             mineBtn.disabled = true;
             blockCard.classList.add('mining');
+            appState.isMining = true;
 
             const icon = mineBtn.querySelector('.icon-spin-target') || mineBtn.querySelector('svg') || mineBtn.querySelector('i');
             if (icon) icon.classList.add('icon-spin');
@@ -525,6 +526,7 @@ async function initBlockSandbox() {
             blockData.disabled = false;
             mineBtn.disabled = false;
             blockCard.classList.remove('mining');
+            appState.isMining = false;
             if (icon) icon.classList.remove('icon-spin');
             showToast(`\u00a1Minado! Nonce: ${localNonce} (${localNonce + 1} intentos en ${elapsed}s)`, 'success');
         }
@@ -926,10 +928,12 @@ function updateTopologyDiagram() {
     });
 
     // Calculate tree depth
-    function calcDepth(nid) {
+    function calcDepth(nid, visited = new Set()) {
+        if (visited.has(nid)) return 0;
+        visited.add(nid);
         const parent = parentMap[nid];
         if (!parent || parent === nid) return 0;
-        return 1 + calcDepth(parent);
+        return 1 + calcDepth(parent, visited);
     }
     const maxDepth = Math.max(...nodeIds.map(calcDepth));
 
@@ -964,7 +968,7 @@ function updateTopologyDiagram() {
             });
         }
     }
-    layoutTree('Peer_A', 0, 60, container.clientWidth - 60 || 600);
+    layoutTree('Peer_A', 0, 60, container.clientWidth > 60 ? container.clientWidth - 60 : 600);
 
     // Draw SVG connection lines
     nodeIds.forEach(nid => {
@@ -1308,13 +1312,16 @@ function renderTitleRegistryTab() {
     const mempoolCount = document.getElementById('mempool-count');
 
     const scope = 'ledger';
-    const nodeA = appState.scopes[scope].nodes['Peer_A'];
-    if (!nodeA) return;
+    const nodes = appState.scopes[scope].nodes;
+    if (!nodes['Peer_A']) return;
 
-    mempoolList.innerHTML = '';
-    mempoolCount.innerText = `${nodeA.mempool.length} en espera`;
+    const selectedMineNode = document.getElementById('mine-node-select')?.value || 'Peer_A';
+    const miningNode = nodes[selectedMineNode] || nodes['Peer_A'];
+    const mempool = miningNode.mempool;
 
-    if (nodeA.mempool.length === 0) {
+    mempoolCount.innerText = `${mempool.length} en espera`;
+
+    if (mempool.length === 0) {
         mempoolList.innerHTML = `
             <tr>
                 <td colspan="3" style="text-align: center; color: var(--color-muted); padding: 20px;">
@@ -1323,15 +1330,13 @@ function renderTitleRegistryTab() {
             </tr>
         `;
     } else {
-        nodeA.mempool.forEach(title => {
-            mempoolList.innerHTML += `
-                <tr>
-                    <td><code class="code" style="font-size: 0.8rem; color: var(--accent-info); font-weight:bold;">${title.title_id}</code></td>
-                    <td><strong>${title.student}</strong></td>
-                    <td>${title.degree}</td>
-                </tr>
-            `;
-        });
+        mempoolList.innerHTML = mempool.map(title => `
+            <tr>
+                <td><code class="code" style="font-size: 0.8rem; color: var(--accent-info); font-weight:bold;">${title.title_id}</code></td>
+                <td><strong>${title.student}</strong></td>
+                <td>${title.degree}</td>
+            </tr>
+        `).join('');
     }
 
     triggerVerificationSearch();
@@ -1346,8 +1351,11 @@ function triggerVerificationSearch() {
     const panel = document.getElementById('verification-status-panel');
 
     const scope = 'ledger';
-    const nodeA = appState.scopes[scope].nodes['Peer_A'];
-    if (!nodeA) return;
+    const nodes = appState.scopes[scope].nodes;
+    if (!nodes['Peer_A']) return;
+
+    const selectedLedgerNode = document.getElementById('ledger-node-select')?.value || 'Peer_A';
+    const verifyNode = nodes[selectedLedgerNode] || nodes['Peer_A'];
 
     if (!query) {
         panel.className = "verification-box info-box";
@@ -1362,13 +1370,13 @@ function triggerVerificationSearch() {
         return;
     }
 
-    if (!nodeA.is_valid) {
+    if (!verifyNode.is_valid) {
         panel.className = "verification-box error-box";
         panel.innerHTML = `
             <i data-lucide="shield-alert" class="status-box-icon"></i>
             <div class="status-box-content">
                 <h4 style="color: var(--accent-invalid);">\u00a1ALERTA DE SEGURIDAD! CADENA COMPROMETIDA</h4>
-                <p>El registro de Blockchain se encuentra en un estado <strong>INV\u00c1LIDO (firma rota)</strong> en el Nodo L\u00edder.</p>
+                <p>El registro de Blockchain se encuentra en un estado <strong>INV\u00c1LIDO (firma rota)</strong> en <strong>${displayNodeName(selectedLedgerNode)}</strong>.</p>
                 <p style="margin-top: 8px; font-size: 0.8rem; color: var(--color-muted);">
                     Se ha detectado una alteraci\u00f3n no autorizada de datos en el historial. El sistema de verificaci\u00f3n est\u00e1 bloqueado para prevenir el uso de credenciales forjadas. Sincroniza la red mediante el algoritmo de consenso para restablecer la confianza.
                 </p>
@@ -1378,11 +1386,11 @@ function triggerVerificationSearch() {
         return;
     }
 
-    const titles = nodeA.titles || {};
+    const titles = verifyNode.titles || {};
     let foundTitle = null;
 
     for (const [tid, title] of Object.entries(titles)) {
-        if (tid.toLowerCase() === query || title.student.toLowerCase().includes(query)) {
+        if (tid.toLowerCase().includes(query) || title.student.toLowerCase().includes(query)) {
             foundTitle = title;
             break;
         }
@@ -1652,6 +1660,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Settings ---
     document.getElementById('difficulty-select').addEventListener('change', async (e) => {
         const newDiff = parseInt(e.target.value);
+        if (appState.isMining) {
+            showToast('No puedes cambiar la dificultad mientras hay un bloque minándose.', 'warning');
+            e.target.value = appState.difficulty;
+            return;
+        }
+        const prevDiff = appState.difficulty;
         try {
             const response = await fetch('/api/difficulty', {
                 method: 'POST',
@@ -1667,7 +1681,11 @@ document.addEventListener('DOMContentLoaded', () => {
             appState.scopes['chain'].nodes = data.nodes;
             appState.scopes['attack'].difficulty = data.difficulty;
             appState.scopes['ledger'].difficulty = data.difficulty;
-            showToast(`Dificultad cambiada a ${newDiff}. Los bloques requerir\u00e1n m\u00e1s c\u00f3mputo para minarse.`, 'info');
+            if (newDiff > prevDiff) {
+                showToast(`Dificultad aumentada a ${newDiff}. Los bloques existentes quedar\u00e1n INV\u00c1LIDOS y deber\u00e1n reminarse.`, 'warning');
+            } else {
+                showToast(`Dificultad cambiada a ${newDiff}.`, 'info');
+            }
             renderActiveTab();
         } catch (error) {
             console.error(error);
@@ -1768,6 +1786,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Mine Mempool ---
     document.getElementById('mine-transactions-btn').addEventListener('click', async () => {
         const selectedNode = document.getElementById('mine-node-select').value;
+        const selectedNodeData = appState.scopes['ledger'].nodes[selectedNode];
+        if (!selectedNodeData || selectedNodeData.mempool.length === 0) {
+            showToast(`La bandeja de ${displayNodeName(selectedNode)} está vacía. Registra títulos antes de minar.`, 'warning');
+            return;
+        }
         const btn = document.getElementById('mine-transactions-btn');
         btn.disabled = true;
 
@@ -1827,21 +1850,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const fakeTitleText = "ID: TIT-FALSO | Hacker Malicioso | T\u00edtulo Falsificado (Univ. Hackeada)";
-            await fetch(`/api/attack/nodes/Peer_B/tamper`, {
+            const tamperRes = await fetch(`/api/attack/nodes/Peer_B/tamper`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ block_index: 2, new_data: fakeTitleText })
             });
+            if (!tamperRes.ok) throw new Error('Tamper fallido en Nodo B');
+            const tamperData = await tamperRes.json();
+            appState.scopes['attack'].nodes = tamperData.nodes;
 
             // Reminar TODOS los bloques desde index 2 hasta el final de la cadena
-            const peerBNode = appState.scopes['attack'].nodes['Peer_B'];
-            const chainLen = peerBNode ? peerBNode.chain.length : 5;
+            const chainLen = tamperData.nodes?.['Peer_B']?.chain?.length ?? 5;
             for (let blockIdx = 2; blockIdx < chainLen; blockIdx++) {
-                await fetch(`/api/attack/nodes/Peer_B/mine_block_index`, {
+                const mineRes = await fetch(`/api/attack/nodes/Peer_B/mine_block_index`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ block_index: blockIdx })
                 });
+                if (!mineRes.ok) throw new Error(`Reminado fallido en bloque ${blockIdx}`);
             }
 
             await fetchStatus('attack');
@@ -1893,6 +1919,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ledgerNodeSelect) {
         ledgerNodeSelect.addEventListener('change', () => {
             renderChainBlocks('ledger-blockchain-list', 'ledger-node-select', 'ledger', 'ledger-block');
+            triggerVerificationSearch();
+        });
+    }
+
+    const mineNodeSelect = document.getElementById('mine-node-select');
+    if (mineNodeSelect) {
+        mineNodeSelect.addEventListener('change', () => {
+            if (appState.activeTab === 'ledger-tab') renderTitleRegistryTab();
         });
     }
 

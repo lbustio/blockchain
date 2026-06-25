@@ -278,11 +278,16 @@ def load_ledger(payload: LoadLedgerModel):
     except ValueError as e:
         raise HTTPException(status_code=403, detail=str(e))
     state = json.loads(state_json)
-    managers["ledger"] = NodeManager.load_state(state)
+    loaded = NodeManager.load_state(state)
+    mgr = managers["ledger"]
+    mgr.nodes = loaded.nodes
+    mgr.difficulty = loaded.difficulty
+    mgr.node_connections = loaded.node_connections
+    mgr.node_parents = loaded.node_parents
     return {
         "message": f"Ledger cargado desde {payload.filename}.blk",
-        "nodes": managers["ledger"].get_nodes_status(),
-        "difficulty": managers["ledger"].difficulty,
+        "nodes": mgr.get_nodes_status(),
+        "difficulty": mgr.difficulty,
     }
 
 @app.get("/api/ledger/saves")
@@ -301,8 +306,8 @@ def legacy_status():
 
 @app.post("/api/reset")
 def legacy_reset():
-    for m in managers.values():
-        m.reset_all_nodes()
+    for key, m in managers.items():
+        m.reset_all_nodes(0 if key == "ledger" else 4)
     m = managers["chain"]
     return {"message": "Todas las simulaciones reiniciadas", "nodes": m.get_nodes_status()}
 
