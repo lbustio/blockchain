@@ -20,3 +20,7 @@ data/
 # OS
 .DS_Store
 Thumbs.db
+
+# WinSW / servicios Windows
+*-service.exe
+logs/

@@ -1,3 +1,14 @@
+// Detecta el base path automaticamente segun donde este alojada la app.
+// En localhost: API_BASE = ''  → fetch('/api/...')
+// Bajo nginx:   API_BASE = '/blocklearn' → fetch('/blocklearn/api/...')
+const API_BASE = (() => {
+    const s = document.querySelector('script[src*="app.js"]');
+    if (!s) return '';
+    const parts = new URL(s.src).pathname.split('/').filter(Boolean);
+    parts.pop(); // quita 'app.js'
+    return parts.length ? '/' + parts.join('/') : '';
+})();
+
 // ═══════════════════════════════════════
 //          GLOBAL STATE
 // ═══════════════════════════════════════
@@ -231,7 +242,7 @@ function updateNodeSelectors() {
 
 async function fetchStatus(scope = 'chain') {
     try {
-        const response = await fetch(`/api/${scope}/status`);
+        const response = await fetch(`${API_BASE}/api/${scope}/status`);
         if (!response.ok) throw new Error('Error al obtener el estado');
         const data = await response.json();
         appState.scopes[scope].difficulty = data.difficulty;
@@ -248,7 +259,7 @@ async function fetchStatus(scope = 'chain') {
 
 async function apiMineBlock(nodeId, data = null, scope = 'chain') {
     try {
-        const response = await fetch(`/api/${scope}/nodes/${nodeId}/mine`, {
+        const response = await fetch(`${API_BASE}/api/${scope}/nodes/${nodeId}/mine`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ data: data })
@@ -270,7 +281,7 @@ async function apiTamperBlock(nodeId, blockIndex, newStatusData, scope = 'chain'
     let tamperResolve;
     pendingTampers[tamperKey] = new Promise(r => { tamperResolve = r; });
     try {
-        const response = await fetch(`/api/${scope}/nodes/${nodeId}/tamper`, {
+        const response = await fetch(`${API_BASE}/api/${scope}/nodes/${nodeId}/tamper`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ block_index: blockIndex, new_data: newStatusData })
@@ -291,7 +302,7 @@ async function apiTamperBlock(nodeId, blockIndex, newStatusData, scope = 'chain'
 
 async function apiMineBlockIndex(nodeId, blockIndex, scope = 'chain') {
     try {
-        const response = await fetch(`/api/${scope}/nodes/${nodeId}/mine_block_index`, {
+        const response = await fetch(`${API_BASE}/api/${scope}/nodes/${nodeId}/mine_block_index`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ block_index: blockIndex })
@@ -311,7 +322,7 @@ async function apiAddNode(nodeId, parentId = null, scope = 'chain') {
     try {
         const body = { node_id: nodeId };
         if (parentId) body.parent_id = parentId;
-        const response = await fetch(`/api/${scope}/nodes`, {
+        const response = await fetch(`${API_BASE}/api/${scope}/nodes`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
@@ -333,7 +344,7 @@ async function apiAddNode(nodeId, parentId = null, scope = 'chain') {
 
 async function apiDeleteNode(nodeId, scope = 'chain') {
     try {
-        const response = await fetch(`/api/${scope}/nodes/${nodeId}`, {
+        const response = await fetch(`${API_BASE}/api/${scope}/nodes/${nodeId}`, {
             method: 'DELETE'
         });
         if (!response.ok) {
@@ -353,7 +364,7 @@ async function apiDeleteNode(nodeId, scope = 'chain') {
 
 async function apiToggleNodeConnection(nodeId, scope = 'chain') {
     try {
-        const response = await fetch(`/api/${scope}/nodes/${nodeId}/toggle_connection`, {
+        const response = await fetch(`${API_BASE}/api/${scope}/nodes/${nodeId}/toggle_connection`, {
             method: 'POST'
         });
         if (!response.ok) throw new Error('Error al conectar/desconectar nodo');
@@ -370,7 +381,7 @@ async function apiToggleNodeConnection(nodeId, scope = 'chain') {
 
 async function apiCreateBlockManual(nodeId, data, mine, scope = 'chain') {
     try {
-        const response = await fetch(`/api/${scope}/nodes/${nodeId}/blocks/create`, {
+        const response = await fetch(`${API_BASE}/api/${scope}/nodes/${nodeId}/blocks/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ data: data, mine: mine })
@@ -388,7 +399,7 @@ async function apiCreateBlockManual(nodeId, data, mine, scope = 'chain') {
 
 async function apiDeleteBlock(nodeId, index, scope = 'chain') {
     try {
-        const response = await fetch(`/api/${scope}/nodes/${nodeId}/blocks/${index}`, {
+        const response = await fetch(`${API_BASE}/api/${scope}/nodes/${nodeId}/blocks/${index}`, {
             method: 'DELETE'
         });
         if (!response.ok) {
@@ -935,7 +946,7 @@ function updateTopologyDiagram() {
         if (!parent || parent === nid) return 0;
         return 1 + calcDepth(parent, visited);
     }
-    const maxDepth = Math.max(...nodeIds.map(calcDepth));
+    const maxDepth = Math.max(...nodeIds.map(nid => calcDepth(nid)));
 
     // Set container height based on tree depth
     const nodeH = 150;
@@ -1124,7 +1135,8 @@ function renderAttackChainSections() {
 
         // Chain blocks
         const chainDiv = document.createElement('div');
-        chainDiv.style.cssText = 'display:flex;flex-direction:column;align-items:stretch;gap:0;';
+        chainDiv.className = 'blockchain-wrapper';
+        chainDiv.style.cssText = 'overflow-x: auto;';
 
         blockchain.chain.forEach((block, idx) => {
             const target = '0'.repeat(difficulty);
@@ -1182,12 +1194,12 @@ function renderAttackChainSections() {
             `;
             chainDiv.appendChild(blockEl);
 
-            // Chain link between blocks (vertical: downward arrow)
+            // Chain link between blocks (horizontal arrow)
             if (idx < blockchain.chain.length - 1) {
                 const nextBlock = blockchain.chain[idx + 1];
                 const linkBroken = (nextBlock.previous_hash !== block.hash);
                 const linkEl = document.createElement('div');
-                linkEl.className = `chain-link-vertical ${linkBroken ? 'broken' : ''}`;
+                linkEl.className = `chain-link ${linkBroken ? 'broken' : ''}`;
                 linkEl.innerHTML = `<div class="chain-link-line"></div><span class="chain-link-arrow">${linkBroken ? '\u2715 ROTO' : ''}</span>`;
                 chainDiv.appendChild(linkEl);
             }
@@ -1435,7 +1447,7 @@ function triggerVerificationSearch() {
 // ═══════════════════════════════════════
 async function fetchLedgerSaves() {
     try {
-        const r = await fetch('/api/ledger/saves');
+        const r = await fetch(`${API_BASE}/api/ledger/saves`);
         if (!r.ok) return;
         const data = await r.json();
         const sel = document.getElementById('ledger-saves-list');
@@ -1452,7 +1464,7 @@ async function fetchLedgerSaves() {
 
 async function apiSaveLedger(filename, password) {
     try {
-        const r = await fetch('/api/ledger/save', {
+        const r = await fetch(`${API_BASE}/api/ledger/save`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ filename, password })
@@ -1467,7 +1479,7 @@ async function apiSaveLedger(filename, password) {
 
 async function apiLoadLedger(filename, password) {
     try {
-        const r = await fetch('/api/ledger/load', {
+        const r = await fetch(`${API_BASE}/api/ledger/load`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ filename, password })
@@ -1667,7 +1679,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const prevDiff = appState.difficulty;
         try {
-            const response = await fetch('/api/difficulty', {
+            const response = await fetch(`${API_BASE}/api/difficulty`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ difficulty: newDiff })
@@ -1704,7 +1716,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (confirm(`\u00bfRestablecer la simulaci\u00f3n "${scope}"? Se borrar\u00e1n todos los t\u00edtulos registrados.`)) {
             try {
-                const response = await fetch(`/api/${scope}/reset`, { method: 'POST' });
+                const response = await fetch(`${API_BASE}/api/${scope}/reset`, { method: 'POST' });
                 if (!response.ok) throw new Error('Error');
                 const data = await response.json();
                 appState.scopes[scope].nodes = data.nodes;
@@ -1724,7 +1736,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            const response = await fetch('/api/attack/consensus', { method: 'POST' });
+            const response = await fetch(`${API_BASE}/api/attack/consensus`, { method: 'POST' });
             if (!response.ok) {
                 const errData = await response.json();
                 throw new Error(errData.detail || 'Consenso fallido');
@@ -1757,7 +1769,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const titleId = document.getElementById('title-id').value;
 
         try {
-            const response = await fetch('/api/ledger/titles', {
+            const response = await fetch(`${API_BASE}/api/ledger/titles`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1850,7 +1862,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const fakeTitleText = "ID: TIT-FALSO | Hacker Malicioso | T\u00edtulo Falsificado (Univ. Hackeada)";
-            const tamperRes = await fetch(`/api/attack/nodes/Peer_B/tamper`, {
+            const tamperRes = await fetch(`${API_BASE}/api/attack/nodes/Peer_B/tamper`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ block_index: 2, new_data: fakeTitleText })
@@ -1862,7 +1874,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reminar TODOS los bloques desde index 2 hasta el final de la cadena
             const chainLen = tamperData.nodes?.['Peer_B']?.chain?.length ?? 5;
             for (let blockIdx = 2; blockIdx < chainLen; blockIdx++) {
-                const mineRes = await fetch(`/api/attack/nodes/Peer_B/mine_block_index`, {
+                const mineRes = await fetch(`${API_BASE}/api/attack/nodes/Peer_B/mine_block_index`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ block_index: blockIdx })
@@ -1887,7 +1899,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Ejecutando Ataque del 51% (forzando mentira en Nodo B y Nodo C)...', 'warning');
 
         try {
-            const response = await fetch(`/api/attack/attacks/51percent`, {
+            const response = await fetch(`${API_BASE}/api/attack/attacks/51percent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

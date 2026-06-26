@@ -1,0 +1,11 @@
+<service>
+  <id>blocklearn</id>
+  <name>BlockLearn</name>
+  <description>BlockLearn - Demo Educativa de Blockchain (FastAPI + uvicorn)</description>
+  <executable>D:\Code\python\blockchain\.venv\Scripts\python.exe</executable>
+  <arguments>main.py</arguments>
+  <workingdirectory>D:\Code\python\blockchain</workingdirectory>
+  <startmode>Automatic</startmode>
+  <logmode>rotate</logmode>
+  <logpath>D:\Code\python\blockchain\logs</logpath>
+</service>
